@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/2026-2027-Biobuzz-Season-Code-master" />
+        <option name="gradleJvm" value="24" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/2026-2027-Biobuzz-Season-Code-master" />
+            <option value="$PROJECT_DIR$/2026-2027-Biobuzz-Season-Code-master/FtcRobotController" />
+            <option value="$PROJECT_DIR$/2026-2027-Biobuzz-Season-Code-master/TeamCode" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>
