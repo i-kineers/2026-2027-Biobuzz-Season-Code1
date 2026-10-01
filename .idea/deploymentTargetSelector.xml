@@ -2,16 +2,19 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
+      <SelectionState runConfigName="TeamCode.main">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="TeamCode">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
       <SelectionState runConfigName="2026-2027-Biobuzz-Season-Code-master.TeamCode">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="2026-2027-Biobuzz-Season-Code-master.TeamCode.main">
+      <SelectionState runConfigName="TeamCode.unitTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="2026-2027-Biobuzz-Season-Code-master.TeamCode.androidTest">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="2026-2027-Biobuzz-Season-Code-master.TeamCode.unitTest">
+      <SelectionState runConfigName="TeamCode.androidTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
