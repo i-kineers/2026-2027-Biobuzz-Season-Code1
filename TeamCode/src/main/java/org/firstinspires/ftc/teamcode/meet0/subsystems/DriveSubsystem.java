@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class driveSubsystem {
+public class DriveSubsystem {
 
     private final DcMotor frontLeftMotor;
     private final DcMotor backLeftMotor;
@@ -18,7 +18,7 @@ public class driveSubsystem {
     private final InputRamper xRamper;
     private final InputRamper rxRamper;
 
-    public driveSubsystem(HardwareMap hardwareMap) {
+    public DriveSubsystem(HardwareMap hardwareMap) {
 
         frontLeftMotor = hardwareMap.get(DcMotor.class, "flmotor");
         backLeftMotor = hardwareMap.get(DcMotor.class, "blmotor");
@@ -68,10 +68,7 @@ public class driveSubsystem {
 
 
         // Normalize if any motor would exceed power 1.0
-        double denominator = Math.max(
-                Math.abs(y) + Math.abs(x) + Math.abs(rx),
-                1.0
-        );
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
 
         frontLeftPower /= denominator;
         backLeftPower /= denominator;

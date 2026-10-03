@@ -4,14 +4,14 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class intakeSubsystem {
+public class IntakeSubsystem {
 
     private final DcMotor frontIntake;
 
     public enum IntakeState {IDLE, INTAKE, OUTTAKE}
     private IntakeState currentIntakeState = IntakeState.IDLE;
 
-    public intakeSubsystem(HardwareMap hardwareMap) {
+    public IntakeSubsystem(HardwareMap hardwareMap) {
         frontIntake = hardwareMap.get(DcMotor.class, "rightIntake");
         frontIntake.setDirection(DcMotor.Direction.FORWARD);
     }
