@@ -7,14 +7,30 @@
 buildscript {
     repositories {
         mavenCentral()
+        maven {
+            url "https://repo.dairy.foundation/releases"
+        }
+
         google()
     }
+    dependencies {
+        classpath "dev.frozenmilk:Load:0.2.4"
+    }
+
 }
 
 plugins {
     // Note for FTC Teams: Do not modify this yourself.
     id 'com.android.application' version '8.12.2' apply false
     id 'com.android.library' version '8.12.2' apply false
+}
+repositories {
+    maven {
+        url = "https://repo.dairy.foundation/releases"
+    }
+    maven {
+        url = "https://repo.dairy.foundation/snapshots"
+    }
 }
 
 // This is now required because aapt2 has to be downloaded from the
