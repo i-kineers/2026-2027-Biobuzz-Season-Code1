@@ -1,8 +1,8 @@
-package org.firstinspires.ftc.teamcode.meet0.opModes;
+package org.firstinspires.ftc.teamcode.opModes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import org.firstinspires.ftc.teamcode.meet0.subsystems.MasterLogic;
+import org.firstinspires.ftc.teamcode.subsystems.MasterLogic;
 
 @TeleOp(name = "Test Teleop")
 public class TestTeleOp extends OpMode {
