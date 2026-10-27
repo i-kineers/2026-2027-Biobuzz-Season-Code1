@@ -75,26 +75,30 @@ public class Tests extends Procedure {
         Inputs.Field<Double> distance = inputs.d("Distance").withDefault(48.0);
 
         awaitInputs(inputs);
+        if (Double.isNaN(distance.get()) || Double.isInfinite(distance.get()) || distance.get() <= 0.0) {
+            abort("Enter a finite, positive path distance in inches.");
+            return;
+        }
 
         switch (selectedTest.get()) {
             case HOLD:
-                if (!algorithm)
-                    throw new IllegalArgumentException("Algorithm is required for Hold Test.");
+                if (!algorithm || !localizer || !drivetrain)
+                    throw new IllegalArgumentException("Algorithm, localizer, and drivetrain are required for follower tests.");
                 completed = runOpMode(new TestsHold(followerFunction));
                 break;
             case LINE:
-                if (!algorithm)
-                    throw new IllegalArgumentException("Algorithm is required for Hold Test.");
+                if (!algorithm || !localizer || !drivetrain)
+                    throw new IllegalArgumentException("Algorithm, localizer, and drivetrain are required for follower tests.");
                 completed = runOpMode(new TestsLine(followerFunction, distance.get()));
                 break;
             case CURVED:
-                if (!algorithm)
-                    throw new IllegalArgumentException("Algorithm is required for Hold Test.");
+                if (!algorithm || !localizer || !drivetrain)
+                    throw new IllegalArgumentException("Algorithm, localizer, and drivetrain are required for follower tests.");
                 completed = runOpMode(new TestsCurve(followerFunction, distance.get()));
                 break;
             case INTERPOLATION_CURVED:
-                if (!algorithm)
-                    throw new IllegalArgumentException("Algorithm is required for Hold Test.");
+                if (!algorithm || !localizer || !drivetrain)
+                    throw new IllegalArgumentException("Algorithm, localizer, and drivetrain are required for follower tests.");
                 completed = runOpMode(new TestsInterpolation(followerFunction, distance.get()));
                 break;
             case LOCALIZATION:
@@ -168,7 +172,6 @@ class TestsLine extends TuningOpMode<Boolean> {
         Follower follower = followerFunction.apply(hardwareMap);
         follower.setPose(Pose.zero());
 
-        double distance = 48;
         boolean forward = true;
 
         Path path1 = line(Pose.zero(), new Pose(distance,0, 0)).constant(0);
@@ -210,7 +213,6 @@ class TestsCurve extends TuningOpMode<Boolean> {
         Follower follower = followerFunction.apply(hardwareMap);
         follower.setPose(Pose.zero());
 
-        double distance = 48;
         boolean forward = true;
 
         Path path1 = curve(Pose.zero(), new Pose(distance + 0,0), new Pose(distance,distance)).tangent();
@@ -252,7 +254,6 @@ class TestsInterpolation extends TuningOpMode<Boolean> {
         Follower follower = followerFunction.apply(hardwareMap);
         follower.setPose(Pose.zero());
 
-        double distance = 48;
         boolean forward = true;
 
         Path path1 = curve(Pose.zero(), new Pose(distance + 0,0), new Pose(distance,distance)).heading((curve, t) -> Math.PI);
@@ -481,4 +482,3 @@ class TestsPose extends TuningOpMode<Boolean> {
         return true;
     }
 }
-

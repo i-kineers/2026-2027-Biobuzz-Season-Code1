@@ -11,8 +11,6 @@ import com.pedropathing.tuning.autotune.TuningOpMode;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import java.util.List;
@@ -172,7 +170,8 @@ public class ThreeWheelIMUTuner extends Procedure {
             c.rightEncoderName.set(rightEncoderName);
             c.strafeEncoderName.set(strafeEncoderName);
             c.imuName.set(imuName);
-            c.imu.set(new RevHubIMU(new RevHubOrientationOnRobot(logoDirection, usbDirection)));            c.leftPodY.set(left ? 0.0 : 1.0);
+            c.imu.set(new RevHubIMU(new RevHubOrientationOnRobot(logoDirection, usbDirection)));
+            c.leftPodY.set(left ? 0.0 : 1.0);
             c.rightPodY.set(left ? -1.0 : 0.0);
             c.strafePodX.set(0.0);
             c.forwardTicksToInches.set(forward);
@@ -188,11 +187,10 @@ public class ThreeWheelIMUTuner extends Procedure {
         for (LynxModule hub : map.getAll(LynxModule.class)) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
-        for (String name : new String[]{"lf", "lr", "rf", "rr"}) {
-            DcMotorEx motor = map.get(DcMotorEx.class, name);
+        // Float configured motors for manual pushes without requiring drivetrain names.
+        // Encoder port names and measured directions are supplied through the config.
+        for (DcMotor motor : map.getAll(DcMotor.class)) {
             motor.setPower(0);
-            motor.setDirection(name.equals("lf") || name.equals("lr")
-                    ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
             motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
         return new ThreeWheelIMULocalizer(map, config);
@@ -324,4 +322,3 @@ class ThreeWheelIMUTurn extends TuningOpMode<Double> {
         }
     }
 }
-

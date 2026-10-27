@@ -11,7 +11,7 @@ public class DriveSubsystem {
     private static final RevHubOrientationOnRobot.LogoFacingDirection LOGO_DIRECTION =
             RevHubOrientationOnRobot.LogoFacingDirection.UP;
     private static final RevHubOrientationOnRobot.UsbFacingDirection USB_DIRECTION =
-            RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+            RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
 
     private final IMU imu;
     private final DcMotor frontLeftMotor;
@@ -66,16 +66,16 @@ public class DriveSubsystem {
 
     public void drive(Gamepad gamepad) {
 
-        if (gamepad.optionsWasPressed()) {
+        if (gamepad.backWasPressed()) {
             resetHeading();
         }
 
         // Negative because pushing the FTC stick forward gives a negative Y value
-        double forward = -gamepad.left_stick_y;
+        double forward = gamepad.left_stick_y;
 
-        double strafe = gamepad.left_stick_x;
+        double strafe = -gamepad.left_stick_x;
 
-        double turn = gamepad.right_stick_x;
+        double turn = -gamepad.right_stick_x;
 
 
         // Ramp the driver's inputs

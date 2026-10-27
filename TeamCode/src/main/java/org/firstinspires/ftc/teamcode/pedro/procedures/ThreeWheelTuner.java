@@ -9,8 +9,6 @@ import com.pedropathing.tuning.autotune.Procedure;
 import com.pedropathing.tuning.autotune.TuningOpMode;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import java.util.List;
@@ -162,11 +160,10 @@ public class ThreeWheelTuner extends Procedure {
         for (LynxModule hub : map.getAll(LynxModule.class)) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
-        for (String name : new String[]{"lf", "lr", "rf", "rr"}) {
-            DcMotorEx motor = map.get(DcMotorEx.class, name);
+        // Float configured motors for manual pushes without requiring drivetrain names.
+        // Encoder port names and measured directions are supplied through the config.
+        for (DcMotor motor : map.getAll(DcMotor.class)) {
             motor.setPower(0);
-            motor.setDirection(name.equals("lf") || name.equals("lr")
-                    ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
             motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
         return new ThreeWheelLocalizer(map, config);
@@ -286,4 +283,3 @@ class ThreeWheelTurn extends TuningOpMode<Double> {
         return config.turnTicksToRadians.get() * (2.0 * Math.PI) / (heading - startHeading);
     }
 }
-
