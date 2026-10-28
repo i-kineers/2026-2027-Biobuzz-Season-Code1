@@ -71,11 +71,11 @@ public class DriveSubsystem {
         }
 
         // Negative because pushing the FTC stick forward gives a negative Y value
-        double forward = -gamepad.left_stick_y;
+        double forward = gamepad.left_stick_y;
 
-        double strafe = gamepad.left_stick_x;
+        double strafe = -gamepad.left_stick_x;
 
-        double turn = gamepad.right_stick_x;
+        double turn = -gamepad.right_stick_x;
 
 
         // Ramp the driver's inputs

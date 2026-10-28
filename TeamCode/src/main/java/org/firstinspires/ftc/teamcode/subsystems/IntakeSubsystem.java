@@ -12,17 +12,17 @@ public class IntakeSubsystem {
     private IntakeState currentIntakeState = IntakeState.IDLE;
 
     public IntakeSubsystem(HardwareMap hardwareMap) {
-        frontIntake = hardwareMap.get(DcMotor.class, "rightIntake");
+        frontIntake = hardwareMap.get(DcMotor.class, "intake");
         frontIntake.setDirection(DcMotor.Direction.FORWARD);
         frontIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     public void runIntake(Gamepad gamepad, double power) {
 
-        if (gamepad.left_trigger > 0.1) {
+        if (gamepad.left_bumper) {
             currentIntakeState = IntakeState.INTAKE;
 
-        } else if (gamepad.left_bumper) {
+        } else if (gamepad.left_trigger > 0.1) {
             currentIntakeState = IntakeState.OUTTAKE;
 
         } else {
