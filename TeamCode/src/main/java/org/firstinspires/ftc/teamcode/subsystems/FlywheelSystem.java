@@ -10,7 +10,7 @@ import java.util.List;
 public class FlywheelSystem {
 
     private final DcMotorEx flywheel;
-    private final DcMotorEx flywheel2;
+//    private final DcMotorEx flywheel2;
 //    private final Servo legKicker;
 //    private final Servo hoodServo;
 //    private final CRServo wheelKicker;
@@ -20,10 +20,10 @@ public class FlywheelSystem {
     public double kI = 0.0; // Old value 0.0001
     public double kD = 0.0; // Old value 0.0004
 
-    public double kF_LOW  = 0.000490;
-    public double kF_HIGH = 0.000426;
+    public double kF_LOW  = 0.000437;
+    public double kF_HIGH = 0.000422;
 
-    public double LOW_TARGET_TPS  = 700;
+    public double LOW_TARGET_TPS  = 760;
     public double HIGH_TARGET_TPS = 1780;
 
     public double DANGER_THRESHOLD = 0.93;
@@ -54,8 +54,8 @@ public class FlywheelSystem {
 //    private boolean autoShootStarted = false;
 
     public FlywheelSystem(HardwareMap hardwareMap) {
-        flywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
-        flywheel2 = hardwareMap.get(DcMotorEx.class, "flywheel2");
+        flywheel = hardwareMap.get(DcMotorEx.class, "shooter");
+//        flywheel2 = hardwareMap.get(DcMotorEx.class, "flywheel2");
 //        legKicker = hardwareMap.get(Servo.class, "legKicker");
 //        wheelKicker = hardwareMap.get(CRServo.class, "wheelKicker");
 //        hoodServo = hardwareMap.get(Servo.class, "hoodServo");
@@ -66,10 +66,10 @@ public class FlywheelSystem {
         flywheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         flywheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        flywheel2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+//        flywheel2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         flywheel.setDirection(DcMotor.Direction.FORWARD);
-        flywheel2.setDirection(DcMotor.Direction.REVERSE);
+//        flywheel2.setDirection(DcMotor.Direction.REVERSE);
 
         pidTimer.reset();
     }
@@ -268,7 +268,6 @@ public class FlywheelSystem {
     public void setFlywheelPower(double power) {
         power = Range.clip(power, 0, 1);
         flywheel.setPower(power);
-        flywheel2.setPower(power);
     }
 
 //    public void hoodControl(double position) {
