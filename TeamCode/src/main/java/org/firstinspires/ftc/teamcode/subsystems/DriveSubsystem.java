@@ -1,149 +1,80 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.hardware.*;
+import com.pedropathing.drivetrain.DrivePowers;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.follower.ManualDrive;
+import com.pedropathing.math.Pose;
+import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 public class DriveSubsystem {
 
-    // Set these to match the physical Control Hub mounting on your robot.
-    private static final RevHubOrientationOnRobot.LogoFacingDirection LOGO_DIRECTION =
-            RevHubOrientationOnRobot.LogoFacingDirection.UP;
-    private static final RevHubOrientationOnRobot.UsbFacingDirection USB_DIRECTION =
-            RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
+    private final Follower follower;
+    private double driverHeadingOffset = 0.0;
 
-    private final IMU imu;
-    private final DcMotor frontLeftMotor;
-    private final DcMotor backLeftMotor;
-    private final DcMotor frontRightMotor;
-    private final DcMotor backRightMotor;
-
-    // Separate rampers for each type of movement
-    private final InputRamper yRamper;
-    private final InputRamper xRamper;
-    private final InputRamper rxRamper;
+    // Keep the existing ramp-up behavior for forward, lateral, and turn input.
+    private final InputRamper yRamper = new InputRamper();
+    private final InputRamper xRamper = new InputRamper();
+    private final InputRamper rxRamper = new InputRamper();
 
     public DriveSubsystem(HardwareMap hardwareMap) {
-
-        frontLeftMotor = hardwareMap.get(DcMotor.class, "flmotor");
-        backLeftMotor = hardwareMap.get(DcMotor.class, "blmotor");
-        frontRightMotor = hardwareMap.get(DcMotor.class, "frmotor");
-        backRightMotor = hardwareMap.get(DcMotor.class, "brmotor");
-
-        imu = hardwareMap.get(IMU.class, "imu");
-        if (!imu.initialize(new IMU.Parameters(
-                new RevHubOrientationOnRobot(LOGO_DIRECTION, USB_DIRECTION)))) {
-            throw new IllegalStateException("Drive IMU failed to initialize");
-        }
-        resetHeading();
-
-
-        // Brake when power = 0
-        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
-        // Same motor direction setup as your old subsystem
-        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        backRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-
-        frontLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        frontRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        backRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
-        yRamper = new InputRamper();
-        xRamper = new InputRamper();
-        rxRamper = new InputRamper();
+        follower = Constants.create(hardwareMap);
+        follower.setPose(new Pose(56.0, 36.0, Math.toRadians(270.0)));
     }
 
-
     public void drive(Gamepad gamepad) {
-
         if (gamepad.backWasPressed()) {
             resetHeading();
         }
 
-        // Negative because pushing the FTC stick forward gives a negative Y value
-        double forward = gamepad.left_stick_y;
+        // Use the joystick conventions from Pedro's TeleOp guide.
+        double forward = yRamper.rampInput(gamepad.left_stick_y);
+        double lateral = xRamper.rampInput(gamepad.left_stick_x);
+        double turn = rxRamper.rampInput(-gamepad.right_stick_x);
 
-        double strafe = -gamepad.left_stick_x;
+        DrivePowers powers = ManualDrive.fieldCentric(
+                forward, lateral, turn, follower.pose().heading() - driverHeadingOffset);
 
-        double turn = -gamepad.right_stick_x;
-
-
-        // Ramp the driver's inputs
-        double fieldY = yRamper.rampInput(forward);
-        double fieldX = xRamper.rampInput(strafe);
-        double rx = rxRamper.rampInput(turn);
-
-        // Rotate the field-relative translation into the robot's coordinate frame.
-        double heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-        double x = fieldX * Math.cos(heading) + fieldY * Math.sin(heading);
-        double y = -fieldX * Math.sin(heading) + fieldY * Math.cos(heading);
-
-        // Standard mecanum wheel calculations
-        double frontLeftPower  = y + x + rx;
-        double backLeftPower   = y - x + rx;
-        double frontRightPower = y - x - rx;
-        double backRightPower  = y + x - rx;
-
-
-        // Normalize if any motor would exceed power 1.0
-        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
-
-        frontLeftPower /= denominator;
-        backLeftPower /= denominator;
-        frontRightPower /= denominator;
-        backRightPower /= denominator;
-
-
-        setMotorPowers(
-                frontLeftPower,
-                backLeftPower,
-                frontRightPower,
-                backRightPower
-        );
+        // The ramper already filters stick noise, so any remaining input exits holding.
+        // Retain Pedro's default 0.2 inches/second threshold for entering a hold.
+        ManualDrive.driveOrHold(follower, powers, 0.0, 0.2);
+        follower.update();
     }
-
-
-    private void setMotorPowers(double frontLeft, double backLeft, double frontRight, double backRight) {
-        frontLeftMotor.setPower(frontLeft);
-        backLeftMotor.setPower(backLeft);
-        frontRightMotor.setPower(frontRight);
-        backRightMotor.setPower(backRight);
-    }
-
 
     public void stop() {
-        setMotorPowers(0, 0, 0, 0);
-
+        follower.stop();
+        // stop() selects IDLE; stop the motors immediately without waiting for another update.
+        follower.drivetrain.stop();
         yRamper.reset();
         xRamper.reset();
         rxRamper.reset();
     }
 
+    /** Resets the driver's field-centric reference without changing the localization pose. */
     public void resetHeading() {
-        imu.resetYaw();
+        driverHeadingOffset = follower.pose().heading();
+    }
+
+    public Pose getPose() {
+        return follower.pose();
     }
 
     public double getHeadingDegrees() {
-        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        return Math.toDegrees(follower.pose().heading());
     }
 
+    public boolean isHolding() {
+        return follower.holding();
+    }
 
     private static class InputRamper {
 
         private final double MIN_MULTIPLIER = 0.4;
         private final double MAX_MULTIPLIER = 1.0;
 
-        private final double increment = 0.4;
+        private final double increment = 0.2;
 
         private final double timeIncrementInMs = 100;
 

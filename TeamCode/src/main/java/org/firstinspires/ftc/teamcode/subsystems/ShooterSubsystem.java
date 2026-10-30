@@ -19,7 +19,7 @@ public class ShooterSubsystem {
 
     // Operating speeds, independent of the feedforward calibration points above.
     // Idle is a separately tunable preset; changing the shooting target leaves it unchanged.
-    public double SHOOTING_TARGET_TPS = 1700;
+    public double SHOOTING_TARGET_TPS = 1400;
     public double IDLE_TARGET_TPS = SHOOTING_TARGET_TPS * 0.8;
 
     public double DANGER_THRESHOLD = 0.93;
