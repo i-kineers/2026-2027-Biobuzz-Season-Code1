@@ -3,16 +3,24 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
 public class IntakeSubsystem {
 
+    private static final double GATE_POSITION_STEP = 0.05;
+
     private final DcMotor frontIntake;
+
+    // Keep tuned presets between loops; reset them when this subsystem is recreated.
+    private double firstServoPosition = 0.0;
+    private double secondServoPosition = 1.0;
 
     public enum IntakeState {IDLE, INTAKE, OUTTAKE}
     private IntakeState currentIntakeState = IntakeState.IDLE;
 
     public IntakeSubsystem(HardwareMap hardwareMap) {
-        frontIntake = hardwareMap.get(DcMotor.class, "rightIntake");
+        frontIntake = hardwareMap.get(DcMotor.class, "intake");
         frontIntake.setDirection(DcMotor.Direction.FORWARD);
         frontIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
@@ -29,18 +37,18 @@ public class IntakeSubsystem {
             currentIntakeState = IntakeState.IDLE;
         }
 
-        intakeFSM(gamepad, power);
+        intakeFSM(power);
     }
 
-    private void intakeFSM(Gamepad gamepad, double power) {
+    private void intakeFSM(double power) {
         switch (currentIntakeState) {
 
             case INTAKE:
-                setFrontIntake(power);
+                setFrontIntake(-power);
                 break;
 
             case OUTTAKE:
-                setFrontIntake(-power);
+                setFrontIntake(power);
                 break;
 
             case IDLE:
