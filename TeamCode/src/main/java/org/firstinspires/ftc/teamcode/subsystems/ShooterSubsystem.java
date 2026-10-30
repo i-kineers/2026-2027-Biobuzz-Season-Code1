@@ -15,11 +15,11 @@ public class ShooterSubsystem {
     public double kF_LOW = 0.000437;
     public double kF_HIGH = 0.000422;
     public double LOW_TARGET_TPS = 760;
-    public double HIGH_TARGET_TPS = 1780;
+    public double HIGH_TARGET_TPS = 1460;
 
     // Operating speeds, independent of the feedforward calibration points above.
     // Idle is a separately tunable preset; changing the shooting target leaves it unchanged.
-    public double SHOOTING_TARGET_TPS = 1400;
+    public double SHOOTING_TARGET_TPS = 1700;
     public double IDLE_TARGET_TPS = SHOOTING_TARGET_TPS * 0.8;
 
     public double DANGER_THRESHOLD = 0.93;
@@ -79,7 +79,7 @@ public class ShooterSubsystem {
                 stop();
                 break;
             case INTAKING:
-                gate.setPosition(0.0);
+                gate.setPosition(0.6);
                 setTargetTPS(IDLE_TARGET_TPS);
                 break;
             case SHOOTING:
@@ -198,7 +198,7 @@ public class ShooterSubsystem {
         shooterState = ShooterState.OFF;
         targetTPS = 0.0;
         lastPower = 0.0;
-        gate.setPosition(0.0);
+        gate.setPosition(0.6);
         flywheel.setPower(0.0);
         resetController();
     }
