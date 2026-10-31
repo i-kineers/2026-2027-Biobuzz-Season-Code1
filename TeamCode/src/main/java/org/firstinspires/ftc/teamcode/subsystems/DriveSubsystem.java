@@ -21,7 +21,7 @@ public class DriveSubsystem {
 
     public DriveSubsystem(HardwareMap hardwareMap) {
         follower = Constants.create(hardwareMap);
-        follower.setPose(new Pose(56.0, 36.0, Math.toRadians(270.0)));
+        follower.setPose(new Pose(56.0, 36.0, Math.toRadians(90)));
     }
 
     public void drive(Gamepad gamepad) {
@@ -37,9 +37,8 @@ public class DriveSubsystem {
         DrivePowers powers = ManualDrive.fieldCentric(
                 forward, lateral, turn, follower.pose().heading() - driverHeadingOffset);
 
-        // The ramper already filters stick noise, so any remaining input exits holding.
-        // Retain Pedro's default 0.2 inches/second threshold for entering a hold.
-        ManualDrive.driveOrHold(follower, powers, 0.0, 0.2);
+        // Apply joystick powers directly without entering position hold.
+        follower.manual(powers);
         follower.update();
     }
 
