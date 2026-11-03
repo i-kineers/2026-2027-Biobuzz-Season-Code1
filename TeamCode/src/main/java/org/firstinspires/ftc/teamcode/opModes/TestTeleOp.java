@@ -30,7 +30,6 @@ public class TestTeleOp extends OpMode {
         telemetry.addLine("Press (Y) on Gamepad 1 to Toggle");
         telemetry.addLine("----------------------------------");
         telemetry.addLine("Press START when ready.");
-        telemetry.addLine("Start at X=56 inches, Y=36 inches, heading=270 degrees.");
         telemetry.addLine("Shooter idles after START. GP1 RT: shoot | Start/Options: off/on.");
         telemetry.addLine("GP1 Back/Share: reset driving reference | LT: intake | LB: outtake.");
         telemetry.update();
