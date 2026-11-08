@@ -58,7 +58,7 @@ public class FlywheelTuner extends LinearOpMode {
                     shooter.setShootingTargetTPS(Math.max(changeTPS, shooter.SHOOTING_TARGET_TPS - changeTPS));
                 }
 
-                shooter.update(gamepad1);
+                shooter.update(gamepad1, gamepad2);
 
                 tunerTelemetry.addData("Shooter state", shooter.getShooterState());
                 tunerTelemetry.addData("P (D-pad Up/Down)", "%.7f", shooter.kP);
