@@ -13,8 +13,6 @@ public class IntakeSubsystem {
     private final DcMotor frontIntake;
 
     // Keep tuned presets between loops; reset them when this subsystem is recreated.
-    private double firstServoPosition = 0.0;
-    private double secondServoPosition = 1.0;
 
     public enum IntakeState {IDLE, INTAKE, OUTTAKE}
     private IntakeState currentIntakeState = IntakeState.IDLE;

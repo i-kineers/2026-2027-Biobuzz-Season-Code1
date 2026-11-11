@@ -5,6 +5,7 @@ import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.ManualDrive;
 import com.pedropathing.math.Pose;
+import com.pedropathing.math.Vector2D;
 import com.pedropathing.utils.Angle;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -28,6 +29,7 @@ public class DriveSubsystem {
 
     // Must use the same field coordinate frame as the localization pose.
     private final Pose rightGoalPose = new Pose(84.17, 81.76);
+    private final Pose leftGoalPose = new Pose(84.17, 54.76);
 
     public DriveSubsystem(HardwareMap hardwareMap) {
         follower = Constants.create(hardwareMap);
@@ -62,8 +64,10 @@ public class DriveSubsystem {
     public double autoAim() {
         Pose robot = follower.pose();
 
-        double dx = rightGoalPose.x() - robot.x();
-        double dy = rightGoalPose.y() - robot.y();
+        Pose currentGoalPose = robot.y() < 70.5 ? leftGoalPose : rightGoalPose;
+
+        double dx = currentGoalPose.x() - robot.x();
+        double dy = currentGoalPose.y() - robot.y();
         if (Math.hypot(dx, dy) < 1e-6) {
             headingController.reset();
             return 0.0;
@@ -75,14 +79,23 @@ public class DriveSubsystem {
         double currentHeading = robot.heading();
         double error = Angle.normalizeSigned(targetHeading - currentHeading);
 
-        // Deadband
-        if (Math.abs(error) < Math.toRadians(1.5)) {
+        // Match Foresight's signed heading braking displacement (omega is radians/sec).
+        Vector2D brakeCoefficients = Constants.foresightConfig.headingBrakeCoefficients.get();
+        double angularVelocity = follower.velocity().omega;
+        double brakingDisplacement = brakeCoefficients.x() * angularVelocity + brakeCoefficients.y() * angularVelocity * Math.abs(angularVelocity);
+        double predictedHeading = currentHeading + brakingDisplacement;
+        double brakingError = Angle.normalizeSigned(targetHeading - predictedHeading);
+
+        // Stop correcting only when both the current and predicted stopping headings are close.
+        // Keep braking when momentum would carry the shooter past the goal.
+        if (Math.abs(error) < Math.toRadians(1.5)
+                && Math.abs(brakingError) < Math.toRadians(1.5)) {
             headingController.reset();
             return 0.0;
         }
 
         // Pedro 3 takes the target and the signed error as separate arguments.
-        double turnPower = headingController.calculate(targetHeading, error);
+        double turnPower = headingController.calculate(targetHeading, brakingError);
 
         // Ramp down near target for precision
         double maxTurn = Math.abs(error) < Math.toRadians(10) ? 0.2 : 0.4;

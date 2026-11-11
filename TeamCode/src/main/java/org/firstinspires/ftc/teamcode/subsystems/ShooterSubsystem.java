@@ -84,12 +84,12 @@ public class ShooterSubsystem {
                 stop();
                 break;
             case INTAKING:
-                gate.setPosition(0.6);
+                gate.setPosition(0.4);
                 setTargetTPS(IDLE_TARGET_TPS);
                 break;
             case SHOOTING:
                 setTargetTPS(SHOOTING_TARGET_TPS);
-                gate.setPosition(targetTPS > 0.0 ? 1.0 : 0.0);
+                gate.setPosition(targetTPS > 0.0 ? 0.7 : 0.0);
                 break;
         }
     }
