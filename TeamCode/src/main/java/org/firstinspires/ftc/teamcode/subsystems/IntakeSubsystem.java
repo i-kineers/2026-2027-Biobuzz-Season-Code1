@@ -26,10 +26,10 @@ public class IntakeSubsystem {
 
     public void runIntake(Gamepad gamepad, double power) {
 
-        if (gamepad.left_bumper) {
+        if (gamepad.left_trigger > 0.1) {
             currentIntakeState = IntakeState.INTAKE;
 
-        } else if (gamepad.left_trigger > 0.1) {
+        } else if (gamepad.left_bumper) {
             currentIntakeState = IntakeState.OUTTAKE;
 
         } else {
