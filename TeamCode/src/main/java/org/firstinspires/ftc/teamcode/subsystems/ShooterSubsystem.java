@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -43,8 +44,8 @@ public class ShooterSubsystem {
     private double lastRecoveryTime = 0.0;
 
     public enum ShooterState {OFF, SHOOTING, INTAKING}
-    private ShooterState shooterState = ShooterState.INTAKING;
-
+    public ShooterState shooterState = ShooterState.INTAKING;
+    public final ElapsedTime autoShootTimer = new ElapsedTime();
     public ShooterSubsystem(HardwareMap hardwareMap) {
         gate = hardwareMap.get(Servo.class, "gate");
         gate.setPosition(0.0);
@@ -78,7 +79,7 @@ public class ShooterSubsystem {
         }
     }
 
-    private void handleShotLogic() {
+    public void handleShotLogic() {
         switch (shooterState)  {
             case OFF:
                 stop();
@@ -92,6 +93,27 @@ public class ShooterSubsystem {
                 gate.setPosition(targetTPS > 0.0 ? 0.9 : 0.0);
                 break;
         }
+    }
+    public Command autoOPMODEShoot(long durationMs){
+        return Command.build()
+
+                .setStart(() -> {
+                    shooterState = ShooterState.SHOOTING;
+                    handleShotLogic();
+                    autoShootTimer.reset();
+                })
+
+                .setExecute(() -> {
+                    update();
+                })
+
+                .setDone(() ->
+                        autoShootTimer.milliseconds() >= durationMs
+                )
+
+                .setEnd(endCondition -> {
+                    stop();
+                });
     }
 
     /** Selects idle/shooting/off, applies the gate state, and updates motor power. */
@@ -207,7 +229,6 @@ public class ShooterSubsystem {
         flywheel.setPower(0.0);
         resetController();
     }
-
     private void resetController() {
         integralSum = 0.0;
         lastError = 0.0;
