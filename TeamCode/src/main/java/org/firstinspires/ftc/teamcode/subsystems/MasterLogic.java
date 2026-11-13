@@ -1,33 +1,24 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.pedropathing.ivy.Command;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-
-import static com.pedropathing.ivy.groups.Groups.parallel;
 
 public class MasterLogic {
 
-    private IntakeSubsystem intake;
+    private final TelemetryManager panels = PanelsTelemetry.INSTANCE.getTelemetry();
+    private final IntakeSubsystem intake;
     private final DriveSubsystem drive;
-    private ShooterSubsystem shooter;
-    private boolean isBlue;
-    private final ElapsedTime autoIntakeTimer = new ElapsedTime();
-    private final ElapsedTime autoShootTimer = new ElapsedTime();
+    private final ShooterSubsystem shooter;
+    private final boolean isBlue;
 
     public MasterLogic(HardwareMap hardwareMap, boolean isBlue) {
         this.isBlue = isBlue;
 
         intake = new IntakeSubsystem(hardwareMap);
         drive = new DriveSubsystem(hardwareMap);
-        shooter = new ShooterSubsystem(hardwareMap);
-    }
-    public void MasterLogicAuto(HardwareMap hardwareMap, boolean isBlue) {
-        this.isBlue = isBlue;
-
-        intake = new IntakeSubsystem(hardwareMap);
         shooter = new ShooterSubsystem(hardwareMap);
     }
 
@@ -38,29 +29,25 @@ public class MasterLogic {
         displayTelemetry(telemetry);
     }
 
-    public void displayTelemetry(Telemetry telemetry) {
+    public void displayTelemetry(Telemetry driverStationTelemetry) {
+        Telemetry telemetry = panels.getWrapper();
         telemetry.addData("Drive", drive.isHolding() ? "Holding position" : "Field-centric");
         telemetry.addData("Alliance (display only)", isBlue ? "BLUE" : "RED");
         telemetry.addData("Robot X (inches)", "%.1f", drive.getPose().x());
         telemetry.addData("Robot Y (inches)", "%.1f", drive.getPose().y());
         telemetry.addData("Heading (degrees)", "%.1f", drive.getHeadingDegrees());
         telemetry.addData("Shooter state", shooter.getShooterState());
-        telemetry.addData("Shooter target (TPS)", "%.0f", shooter.getTargetTPS());
-        telemetry.addData("Shooter actual (TPS)", "%.0f", shooter.getVelocity());
+        telemetry.addData("Shooter target (TPS)", shooter.getTargetTPS());
+        telemetry.addData("Shooter actual (TPS)", shooter.getVelocity());
         telemetry.addData("Shooter power", "%.2f", shooter.getPower());
         telemetry.addLine("GP1 Back/Share: reset driving reference | LT: intake | LB: outtake");
         telemetry.addLine("GP1 RT: shoot | Start/Options: toggle shooter off/on");
+        panels.update(driverStationTelemetry);
     }
 
     public void stop() {
         shooter.stop();
         drive.stop();
         intake.stop();
-    }
-    public Command autoOPMODEIntakeShooter(long intakeTime, long shooterTime) {
-        return parallel(
-                intake.autoOPMODEintake(intakeTime),
-                shooter.autoOPMODEShoot(shooterTime)
-        );
     }
 }

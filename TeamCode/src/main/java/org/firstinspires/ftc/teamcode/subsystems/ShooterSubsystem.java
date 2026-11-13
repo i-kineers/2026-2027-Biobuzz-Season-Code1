@@ -10,8 +10,8 @@ public class ShooterSubsystem {
 
     // Starting values from last year's shooter; tune for this motor and gearing.
     public double kP = 0.0035;
-    public double kI = 0.0;
-    public double kD = 0.0;
+    public double kI = 0.00001;
+    public double kD = 0.000001;
 
     public double kF_LOW = 0.000437;
     public double kF_HIGH = 0.000422;
@@ -90,7 +90,7 @@ public class ShooterSubsystem {
                 break;
             case SHOOTING:
                 setTargetTPS(SHOOTING_TARGET_TPS);
-                gate.setPosition(targetTPS > 0.0 ? 0.7 : 0.0);
+                gate.setPosition(targetTPS > 0.0 ? 0.9 : 0.0);
                 break;
         }
     }
