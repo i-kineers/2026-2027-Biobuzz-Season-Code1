@@ -1,21 +1,33 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+import static com.pedropathing.ivy.groups.Groups.parallel;
 
 public class MasterLogic {
 
-    private final IntakeSubsystem intake;
+    private IntakeSubsystem intake;
     private final DriveSubsystem drive;
-    private final ShooterSubsystem shooter;
-    private final boolean isBlue;
+    private ShooterSubsystem shooter;
+    private boolean isBlue;
+    private final ElapsedTime autoIntakeTimer = new ElapsedTime();
+    private final ElapsedTime autoShootTimer = new ElapsedTime();
 
     public MasterLogic(HardwareMap hardwareMap, boolean isBlue) {
         this.isBlue = isBlue;
 
         intake = new IntakeSubsystem(hardwareMap);
         drive = new DriveSubsystem(hardwareMap);
+        shooter = new ShooterSubsystem(hardwareMap);
+    }
+    public void MasterLogicAuto(HardwareMap hardwareMap, boolean isBlue) {
+        this.isBlue = isBlue;
+
+        intake = new IntakeSubsystem(hardwareMap);
         shooter = new ShooterSubsystem(hardwareMap);
     }
 
@@ -44,5 +56,11 @@ public class MasterLogic {
         shooter.stop();
         drive.stop();
         intake.stop();
+    }
+    public Command autoOPMODEIntakeShooter(long intakeTime, long shooterTime) {
+        return parallel(
+                intake.autoOPMODEintake(intakeTime),
+                shooter.autoOPMODEShoot(shooterTime)
+        );
     }
 }

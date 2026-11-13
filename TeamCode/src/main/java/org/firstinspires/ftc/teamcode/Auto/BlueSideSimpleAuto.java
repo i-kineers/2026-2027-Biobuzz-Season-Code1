@@ -10,33 +10,37 @@ import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.AutoMasterLogic;
+import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.MasterLogic;
+import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
 import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.commands.Commands.waitMs;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
-@Autonomous(name = "BlueAutoPath", group = "Autonomous")
+@Autonomous(name = "MainAuto", group = "Autonomous")
 public class BlueSideSimpleAuto extends OpMode {
     private Follower follower; // you added this before
+    private ShooterSubsystem shooter;
+    private IntakeSubsystem intake;
+    private AutoMasterLogic Automaster;
     private final PoseFactory poseFactory = PoseFactory.degrees(); // add this
-    private final Pose startPose = poseFactory.of(33.8647, 8.1163, 90);
-    private final Pose ShootPoint = poseFactory.of(57.5672, 9.866,  90);
-    private final Pose point1Control1 = poseFactory.of(20.9925, 39.0948, 0);
-    private final Pose park2 = poseFactory.of(8, 100, 90);
+    private final Pose startshootPOSE = poseFactory.of(58.38575347311773, 8.6201844484233, 270);
+    private final Pose point1Control1 = poseFactory.of(23.18, 18.27, 180);
+    private final Pose park2 = poseFactory.of(13.24, 92.26, 270);
     //poses from before
 
-    private Path StartTOshoot() {
-        return curve(startPose,point1Control1, ShootPoint).linear(startPose, ShootPoint);
-    }
     private Path ShootTOpark() {
-        return line(ShootPoint, park2).linear(ShootPoint, park2);
+        return curve(startshootPOSE,point1Control1, park2).linear(startshootPOSE, park2);
     }
     private Command autoRoutine() {
         return sequential(
-                follow(follower, StartTOshoot()),
-                // Add mechanism commands here.
+                Automaster.autoOPMODEIntakeShooter(5000, 7000),
+                waitMs(500),
                 follow(follower, ShootTOpark())
         );
     }
@@ -44,8 +48,11 @@ public class BlueSideSimpleAuto extends OpMode {
     public void init() {
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
-        follower.setPose(startPose);
+        follower.setPose(startshootPOSE);
         follower.update();
+        shooter = new ShooterSubsystem(hardwareMap);
+        intake = new IntakeSubsystem(hardwareMap);
+        Automaster = new AutoMasterLogic(hardwareMap, true);
     }
 
     @Override

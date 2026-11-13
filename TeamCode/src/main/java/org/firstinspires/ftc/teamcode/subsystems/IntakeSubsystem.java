@@ -1,10 +1,10 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class IntakeSubsystem {
 
@@ -17,7 +17,8 @@ public class IntakeSubsystem {
     private double secondServoPosition = 1.0;
 
     public enum IntakeState {IDLE, INTAKE, OUTTAKE}
-    private IntakeState currentIntakeState = IntakeState.IDLE;
+    public IntakeState currentIntakeState = IntakeState.IDLE;
+    private final ElapsedTime autoIntakeTimer = new ElapsedTime();
 
     public IntakeSubsystem(HardwareMap hardwareMap) {
         frontIntake = hardwareMap.get(DcMotor.class, "intake");
@@ -40,7 +41,7 @@ public class IntakeSubsystem {
         intakeFSM(power);
     }
 
-    private void intakeFSM(double power) {
+    public void intakeFSM(double power) {
         switch (currentIntakeState) {
 
             case INTAKE:
@@ -59,6 +60,27 @@ public class IntakeSubsystem {
 
     public void setFrontIntake(double power) {
         frontIntake.setPower(power);
+    }
+
+    public Command autoOPMODEintake(long durationMs){
+        return Command.build()
+
+                .setStart(() -> {
+                    currentIntakeState = IntakeState.INTAKE;
+                    autoIntakeTimer.reset();
+                })
+
+                .setExecute(() -> {
+                    intakeFSM(1);
+                })
+
+                .setDone(() ->
+                        autoIntakeTimer.milliseconds() >= durationMs
+                )
+
+                .setEnd(endCondition -> {
+                    stop();
+                });
     }
 
     public void stop() {
