@@ -12,7 +12,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.AutoMasterLogic;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.MasterLogic;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 
 import static com.pedropathing.api.Paths.curve;
@@ -23,7 +22,7 @@ import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
 @Autonomous(name = "MainAuto", group = "Autonomous")
-public class BlueSideSimpleAuto extends OpMode {
+public class SimpleAutonomous extends OpMode {
     private Follower follower; // you added this before
     private ShooterSubsystem shooter;
     private IntakeSubsystem intake;

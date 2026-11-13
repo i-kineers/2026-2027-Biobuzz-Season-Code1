@@ -33,8 +33,8 @@ public class MasterLogic {
 
     public void mainLogic(Gamepad gamepad1, Gamepad gamepad2, Telemetry telemetry) {
         drive.drive(gamepad1);
-        intake.runIntake(gamepad1, 1.0);
-        shooter.update(gamepad1);
+        intake.runIntake(gamepad1, 1);
+        shooter.update(gamepad1, gamepad2);
         displayTelemetry(telemetry);
     }
 

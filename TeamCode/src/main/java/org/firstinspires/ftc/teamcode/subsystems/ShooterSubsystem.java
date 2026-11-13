@@ -20,7 +20,7 @@ public class ShooterSubsystem {
 
     // Operating speeds, independent of the feedforward calibration points above.
     // Idle is a separately tunable preset; changing the shooting target leaves it unchanged.
-    public double SHOOTING_TARGET_TPS = 1400;
+    public static double SHOOTING_TARGET_TPS = 1450;
     public double IDLE_TARGET_TPS = SHOOTING_TARGET_TPS * 0.8;
 
     public double DANGER_THRESHOLD = 0.93;
@@ -34,7 +34,7 @@ public class ShooterSubsystem {
     private final ElapsedTime pidTimer = new ElapsedTime();
     private final ElapsedTime recoveryTimer = new ElapsedTime();
 
-    private double targetTPS = 0.0;
+    private static double targetTPS = 0.0;
     private double integralSum = 0.0;
     private double lastError = 0.0;
     private double lastPower = 0.0;
@@ -62,7 +62,7 @@ public class ShooterSubsystem {
         resetController();
     }
 
-    private void handleShotStates(Gamepad gamepad) {
+    private void handleShotStates(Gamepad gamepad, Gamepad gamepad2) {
         // OFF stays latched until Start is pressed again.
         if (gamepad.startWasPressed()) {
             shooterState = shooterState == ShooterState.OFF
@@ -72,6 +72,11 @@ public class ShooterSubsystem {
             shooterState = gamepad.right_trigger > 0.3
                     ? ShooterState.SHOOTING : ShooterState.INTAKING;
         }
+        if (gamepad2.dpadUpWasPressed()) {
+            increaseTargetTPS();
+        } else if (gamepad2.dpadDownWasPressed()) {
+            decreaseTargetTPS();
+        }
     }
 
     public void handleShotLogic() {
@@ -80,12 +85,12 @@ public class ShooterSubsystem {
                 stop();
                 break;
             case INTAKING:
-                gate.setPosition(0.6);
+                gate.setPosition(0.4);
                 setTargetTPS(IDLE_TARGET_TPS);
                 break;
             case SHOOTING:
                 setTargetTPS(SHOOTING_TARGET_TPS);
-                gate.setPosition(targetTPS > 0.0 ? 1.0 : 0.0);
+                gate.setPosition(targetTPS > 0.0 ? 0.7 : 0.0);
                 break;
         }
     }
@@ -112,8 +117,8 @@ public class ShooterSubsystem {
     }
 
     /** Selects idle/shooting/off, applies the gate state, and updates motor power. */
-    public void update(Gamepad gamepad) {
-        handleShotStates(gamepad);
+    public void update(Gamepad gamepad, Gamepad gamepad2) {
+        handleShotStates(gamepad, gamepad2);
         handleShotLogic();
         update();
     }
@@ -237,6 +242,14 @@ public class ShooterSubsystem {
 
     public double getTargetTPS() {
         return targetTPS;
+    }
+
+    public static void increaseTargetTPS() {
+        SHOOTING_TARGET_TPS += 10;
+    }
+
+    public static void decreaseTargetTPS() {
+        SHOOTING_TARGET_TPS -= 10;
     }
 
     public ShooterState getShooterState() {

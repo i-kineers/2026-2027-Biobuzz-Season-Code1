@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.controllers.Controller;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.ManualDrive;
 import com.pedropathing.math.Pose;
+import com.pedropathing.math.Vector2D;
+import com.pedropathing.utils.Angle;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -11,36 +14,92 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 public class DriveSubsystem {
 
+    // Localization heading follows the intake (robot front). The shooter faces the rear.
+    // Intake heading 90 degrees => shooter heading 270 degrees, toward the hive at start.
+    private static final double SHOOTER_OFFSET = Math.toRadians(180.0);
+    private final Controller headingController;
     private final Follower follower;
     private double driverHeadingOffset = 0.0;
+    private boolean autoAimEnabled = false;
 
     // Keep the existing ramp-up behavior for forward, lateral, and turn input.
     private final InputRamper yRamper = new InputRamper();
     private final InputRamper xRamper = new InputRamper();
     private final InputRamper rxRamper = new InputRamper();
 
+    // Must use the same field coordinate frame as the localization pose.
+    private final Pose rightGoalPose = new Pose(84.17, 81.76);
+    private final Pose leftGoalPose = new Pose(84.17, 54.76);
+
     public DriveSubsystem(HardwareMap hardwareMap) {
         follower = Constants.create(hardwareMap);
-        follower.setPose(new Pose(56.0, 36.0, Math.toRadians(270.0)));
+        headingController = Constants.foresightConfig.headingFeedback.get();
+        follower.setPose(new Pose(86.57, 133.13, Math.toRadians(90)));
     }
 
     public void drive(Gamepad gamepad) {
         if (gamepad.backWasPressed()) {
             resetHeading();
         }
+        if (gamepad.rightBumperWasPressed()) {
+            autoAimEnabled = !autoAimEnabled;
+            headingController.reset();
+            rxRamper.reset();
+        }
 
         // Use the joystick conventions from Pedro's TeleOp guide.
         double forward = yRamper.rampInput(gamepad.left_stick_y);
         double lateral = xRamper.rampInput(gamepad.left_stick_x);
-        double turn = rxRamper.rampInput(-gamepad.right_stick_x);
+        double turn = autoAimEnabled ? autoAim() : rxRamper.rampInput(-gamepad.right_stick_x);
 
         DrivePowers powers = ManualDrive.fieldCentric(
                 forward, lateral, turn, follower.pose().heading() - driverHeadingOffset);
 
-        // The ramper already filters stick noise, so any remaining input exits holding.
-        // Retain Pedro's default 0.2 inches/second threshold for entering a hold.
-        ManualDrive.driveOrHold(follower, powers, 0.0, 0.2);
+        // Apply translation and the selected turn input without entering position hold.
+        follower.manual(powers);
         follower.update();
+    }
+
+    /** Returns turn power for aiming; the caller must apply it as the drive turn input. */
+    public double autoAim() {
+        Pose robot = follower.pose();
+
+        Pose currentGoalPose = robot.y() < 70.5 ? leftGoalPose : rightGoalPose;
+
+        double dx = currentGoalPose.x() - robot.x();
+        double dy = currentGoalPose.y() - robot.y();
+        if (Math.hypot(dx, dy) < 1e-6) {
+            headingController.reset();
+            return 0.0;
+        }
+
+        double angleToGoal = Math.atan2(dy, dx);
+        double targetHeading = Angle.normalize(angleToGoal + SHOOTER_OFFSET);
+
+        double currentHeading = robot.heading();
+        double error = Angle.normalizeSigned(targetHeading - currentHeading);
+
+        // Match Foresight's signed heading braking displacement (omega is radians/sec).
+        Vector2D brakeCoefficients = Constants.foresightConfig.headingBrakeCoefficients.get();
+        double angularVelocity = follower.velocity().omega;
+        double brakingDisplacement = brakeCoefficients.x() * angularVelocity + brakeCoefficients.y() * angularVelocity * Math.abs(angularVelocity);
+        double predictedHeading = currentHeading + brakingDisplacement;
+        double brakingError = Angle.normalizeSigned(targetHeading - predictedHeading);
+
+        // Stop correcting only when both the current and predicted stopping headings are close.
+        // Keep braking when momentum would carry the shooter past the goal.
+        if (Math.abs(error) < Math.toRadians(1.5)
+                && Math.abs(brakingError) < Math.toRadians(1.5)) {
+            headingController.reset();
+            return 0.0;
+        }
+
+        // Pedro 3 takes the target and the signed error as separate arguments.
+        double turnPower = headingController.calculate(targetHeading, brakingError);
+
+        // Ramp down near target for precision
+        double maxTurn = Math.abs(error) < Math.toRadians(10) ? 0.2 : 0.4;
+        return Math.max(-maxTurn, Math.min(turnPower, maxTurn));
     }
 
     public void stop() {
@@ -50,6 +109,8 @@ public class DriveSubsystem {
         yRamper.reset();
         xRamper.reset();
         rxRamper.reset();
+        headingController.reset();
+        autoAimEnabled = false;
     }
 
     /** Resets the driver's field-centric reference without changing the localization pose. */
@@ -62,12 +123,14 @@ public class DriveSubsystem {
     }
 
     public double getHeadingDegrees() {
-        return Math.toDegrees(follower.pose().heading());
+        return Math.toDegrees(Angle.normalize(follower.pose().heading()));
     }
 
     public boolean isHolding() {
         return follower.holding();
     }
+
+
 
     private static class InputRamper {
 
