@@ -28,13 +28,22 @@ public class DriveSubsystem {
     private final InputRamper rxRamper = new InputRamper();
 
     // Must use the same field coordinate frame as the localization pose.
-    private final Pose rightGoalPose = new Pose(84.17, 81.76);
-    private final Pose leftGoalPose = new Pose(84.17, 54.76);
+    private static Pose rightGoalPose;
+    private static Pose leftGoalPose;
 
-    public DriveSubsystem(HardwareMap hardwareMap) {
+    public DriveSubsystem(HardwareMap hardwareMap, boolean isBlue, double startPoseX, double startPoseY, double heading) {
+
+        if (isBlue) {
+            rightGoalPose = new Pose(84.17, 81.76);
+            leftGoalPose = new Pose(84.17, 54.76);
+        } else {
+            rightGoalPose = new Pose(58.14, 60.56);
+            leftGoalPose = new Pose(58.02, 81.77);
+        }
+
         follower = Constants.create(hardwareMap);
         headingController = Constants.foresightConfig.headingFeedback.get();
-        follower.setPose(new Pose(86.57, 133.13, Math.toRadians(90)));
+        follower.setPose(new Pose(startPoseX, startPoseY, Math.toRadians(heading)));
     }
 
     public void drive(Gamepad gamepad) {
@@ -52,8 +61,7 @@ public class DriveSubsystem {
         double lateral = xRamper.rampInput(gamepad.left_stick_x);
         double turn = autoAimEnabled ? autoAim() : rxRamper.rampInput(-gamepad.right_stick_x);
 
-        DrivePowers powers = ManualDrive.fieldCentric(
-                forward, lateral, turn, follower.pose().heading() - driverHeadingOffset);
+        DrivePowers powers = ManualDrive.fieldCentric(-forward, -lateral, turn, follower.pose().heading() - driverHeadingOffset);
 
         // Apply translation and the selected turn input without entering position hold.
         follower.manual(powers);

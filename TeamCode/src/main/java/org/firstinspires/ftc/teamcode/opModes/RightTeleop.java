@@ -4,8 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.subsystems.MasterLogic;
 
-@TeleOp(name = "Test Teleop")
-public class TestTeleOp extends OpMode {
+@TeleOp(name = "Right Teleop")
+public class RightTeleop extends OpMode {
 
     private boolean isBlue = true;
     private MasterLogic master;
@@ -37,7 +37,7 @@ public class TestTeleOp extends OpMode {
 
     @Override
     public void start() {
-        master = new MasterLogic(hardwareMap, isBlue);
+        master = new MasterLogic(hardwareMap, isBlue, 13.24, 92.26, 270);
     }
 
     @Override

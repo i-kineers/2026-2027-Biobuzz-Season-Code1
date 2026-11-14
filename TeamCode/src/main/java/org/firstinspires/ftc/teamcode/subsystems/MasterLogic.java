@@ -12,13 +12,10 @@ public class MasterLogic {
     private final IntakeSubsystem intake;
     private final DriveSubsystem drive;
     private final ShooterSubsystem shooter;
-    private final boolean isBlue;
 
-    public MasterLogic(HardwareMap hardwareMap, boolean isBlue) {
-        this.isBlue = isBlue;
-
+    public MasterLogic(HardwareMap hardwareMap, boolean isBlue, double startPoseX, double startPoseY, double heading) {
         intake = new IntakeSubsystem(hardwareMap);
-        drive = new DriveSubsystem(hardwareMap);
+        drive = new DriveSubsystem(hardwareMap, isBlue, startPoseX, startPoseY, heading);
         shooter = new ShooterSubsystem(hardwareMap);
     }
 
@@ -32,7 +29,6 @@ public class MasterLogic {
     public void displayTelemetry(Telemetry driverStationTelemetry) {
         Telemetry telemetry = panels.getWrapper();
         telemetry.addData("Drive", drive.isHolding() ? "Holding position" : "Field-centric");
-        telemetry.addData("Alliance (display only)", isBlue ? "BLUE" : "RED");
         telemetry.addData("Robot X (inches)", "%.1f", drive.getPose().x());
         telemetry.addData("Robot Y (inches)", "%.1f", drive.getPose().y());
         telemetry.addData("Heading (degrees)", "%.1f", drive.getHeadingDegrees());

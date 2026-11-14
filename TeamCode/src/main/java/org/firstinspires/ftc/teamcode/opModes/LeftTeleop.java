@@ -1,0 +1,56 @@
+package org.firstinspires.ftc.teamcode.opModes;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import org.firstinspires.ftc.teamcode.subsystems.MasterLogic;
+
+@TeleOp(name = "Left Teleop")
+public class LeftTeleop extends OpMode {
+
+    private boolean isBlue = true;
+    private MasterLogic master;
+
+    @Override
+    public void init() {
+        telemetry.addLine("Main TeleOp Initialized.");
+        telemetry.addLine("Wait for side selection in init_loop...");
+        telemetry.update();
+    }
+
+    @Override
+    public void init_loop() {
+        if (gamepad1.yWasPressed()) {
+            isBlue = !isBlue;
+        }
+
+        // --- Telemetry Display ---
+        telemetry.addLine("=== PRE-MATCH SELECTION ===");
+        telemetry.addData("Selected Alliance", isBlue ? "BLUE" : "RED");
+        telemetry.addLine("Alliance is informational; starting pose is set at START.");
+        telemetry.addLine("Press (Y) on Gamepad 1 to Toggle");
+        telemetry.addLine("----------------------------------");
+        telemetry.addLine("Press START when ready.");
+        telemetry.addLine("Shooter idles after START. GP1 RT: shoot | Start/Options: off/on.");
+        telemetry.addLine("GP1 Back/Share: reset driving reference | LT: intake | LB: outtake.");
+        telemetry.update();
+    }
+
+    @Override
+    public void start() {
+        master = new MasterLogic(hardwareMap, isBlue, 13.24, 125.86, 270);
+    }
+
+    @Override
+    public void loop() {
+        master.mainLogic(gamepad1, gamepad2, telemetry);
+    }
+
+    @Override
+    public void stop() {
+        if (master != null) {
+            master.stop();
+        }
+    }
+
+}
+
