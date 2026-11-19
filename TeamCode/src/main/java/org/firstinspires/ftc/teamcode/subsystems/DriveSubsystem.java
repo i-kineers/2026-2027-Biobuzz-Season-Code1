@@ -21,6 +21,7 @@ public class DriveSubsystem {
     private final Follower follower;
     private double driverHeadingOffset = 0.0;
     private boolean autoAimEnabled = false;
+    private final boolean isBlue;
 
     // Keep the existing ramp-up behavior for forward, lateral, and turn input.
     private final InputRamper yRamper = new InputRamper();
@@ -32,14 +33,15 @@ public class DriveSubsystem {
     private static Pose leftGoalPose;
 
     public DriveSubsystem(HardwareMap hardwareMap, boolean isBlue, double startPoseX, double startPoseY, double heading) {
+        this.isBlue = isBlue;
 
-        if (isBlue) {
-            rightGoalPose = new Pose(84.17, 81.76);
-            leftGoalPose = new Pose(84.17, 54.76);
-        } else {
-            rightGoalPose = new Pose(58.14, 60.56);
-            leftGoalPose = new Pose(58.02, 81.77);
-        }
+//        if (isBlue) {
+//            rightGoalPose = new Pose(84.17, 81.76);
+//            leftGoalPose = new Pose(84.17, 54.76);
+//        } else {
+        rightGoalPose = new Pose(58.14, 60.56);
+        leftGoalPose = new Pose(58.02, 81.77);
+//        }
 
         follower = Constants.create(hardwareMap);
         headingController = Constants.foresightConfig.headingFeedback.get();
@@ -72,7 +74,7 @@ public class DriveSubsystem {
     public double autoAim() {
         Pose robot = follower.pose();
 
-        Pose currentGoalPose = robot.y() < 70.5 ? leftGoalPose : rightGoalPose;
+        Pose currentGoalPose = getSelectedGoalPose();
 
         double dx = currentGoalPose.x() - robot.x();
         double dy = currentGoalPose.y() - robot.y();
@@ -123,11 +125,34 @@ public class DriveSubsystem {
 
     /** Resets the driver's field-centric reference without changing the localization pose. */
     public void resetHeading() {
-        driverHeadingOffset = follower.pose().heading();
+        follower.setPose(new Pose(6.59, 133.88, Math.toRadians(270)));;
     }
 
     public Pose getPose() {
         return follower.pose();
+    }
+
+    public boolean isBlueAlliance() {
+        return isBlue;
+    }
+
+    public boolean isAutoAimEnabled() {
+        return autoAimEnabled;
+    }
+
+    public Pose getSelectedGoalPose() {
+        return follower.pose().y() < 70.5 ? leftGoalPose : rightGoalPose;
+    }
+
+    public double getAimTargetHeadingDegrees() {
+        Pose robot = follower.pose();
+        Pose goal = getSelectedGoalPose();
+        double bearing = Math.atan2(goal.y() - robot.y(), goal.x() - robot.x());
+        return Math.toDegrees(Angle.normalize(bearing + SHOOTER_OFFSET));
+    }
+
+    public double getShooterHeadingDegrees() {
+        return Math.toDegrees(Angle.normalize(follower.pose().heading() + SHOOTER_OFFSET));
     }
 
     public double getHeadingDegrees() {
