@@ -32,6 +32,12 @@ public class MasterLogic {
         telemetry.addData("Robot X (inches)", "%.1f", drive.getPose().x());
         telemetry.addData("Robot Y (inches)", "%.1f", drive.getPose().y());
         telemetry.addData("Heading (degrees)", "%.1f", drive.getHeadingDegrees());
+        telemetry.addData("Aim alliance", drive.isBlueAlliance() ? "BLUE" : "RED");
+        telemetry.addData("Auto aim enabled", drive.isAutoAimEnabled());
+        telemetry.addData("Aim goal X, Y", "%.2f, %.2f",
+                drive.getSelectedGoalPose().x(), drive.getSelectedGoalPose().y());
+        telemetry.addData("Aim target intake heading (deg)", drive.getAimTargetHeadingDegrees());
+        telemetry.addData("Current shooter heading (deg)", drive.getShooterHeadingDegrees());
         telemetry.addData("Shooter state", shooter.getShooterState());
         telemetry.addData("Shooter target (TPS)", shooter.getTargetTPS());
         telemetry.addData("Shooter actual (TPS)", shooter.getVelocity());
