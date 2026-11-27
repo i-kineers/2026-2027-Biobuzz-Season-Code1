@@ -16,6 +16,8 @@ public class DriveSubsystem {
 
     // Localization heading follows the intake (robot front). The shooter faces the rear.
     // Intake heading 90 degrees => shooter heading 270 degrees, toward the hive at start.
+
+    private final VisionSubsystem visionSubsystem;
     private static final double SHOOTER_OFFSET = Math.toRadians(180.0);
     private final Controller headingController;
     private final Follower follower;
@@ -29,19 +31,17 @@ public class DriveSubsystem {
     private final InputRamper rxRamper = new InputRamper();
 
     // Must use the same field coordinate frame as the localization pose.
-    private static Pose rightGoalPose;
-    private static Pose leftGoalPose;
+    private static Pose oppGoalPose;
+    private static Pose audienceGoalPose;
+
+    private static boolean audienceSide;
 
     public DriveSubsystem(HardwareMap hardwareMap, boolean isBlue, double startPoseX, double startPoseY, double heading) {
-        this.isBlue = isBlue;
+        visionSubsystem = new VisionSubsystem(hardwareMap);
 
-//        if (isBlue) {
-//            rightGoalPose = new Pose(84.17, 81.76);
-//            leftGoalPose = new Pose(84.17, 54.76);
-//        } else {
-        rightGoalPose = new Pose(58.14, 60.56);
-        leftGoalPose = new Pose(58.02, 81.77);
-//        }
+        this.isBlue = isBlue;
+        oppGoalPose = new Pose(58.14, 60.56);
+        audienceGoalPose = new Pose(58.02, 81.77);
 
         follower = Constants.create(hardwareMap);
         headingController = Constants.foresightConfig.headingFeedback.get();
@@ -58,20 +58,23 @@ public class DriveSubsystem {
             rxRamper.reset();
         }
 
+
+
         // Use the joystick conventions from Pedro's TeleOp guide.
         double forward = yRamper.rampInput(gamepad.left_stick_y);
         double lateral = xRamper.rampInput(gamepad.left_stick_x);
-        double turn = autoAimEnabled ? autoAim() : rxRamper.rampInput(-gamepad.right_stick_x);
+        double turn = autoAimEnabled ? odometryAutoAim() : rxRamper.rampInput(-gamepad.right_stick_x);
 
         DrivePowers powers = ManualDrive.fieldCentric(-forward, -lateral, turn, follower.pose().heading() - driverHeadingOffset);
 
         // Apply translation and the selected turn input without entering position hold.
         follower.manual(powers);
         follower.update();
+        visionSubsystem.update();
     }
 
     /** Returns turn power for aiming; the caller must apply it as the drive turn input. */
-    public double autoAim() {
+    public double odometryAutoAim() {
         Pose robot = follower.pose();
 
         Pose currentGoalPose = getSelectedGoalPose();
@@ -112,6 +115,33 @@ public class DriveSubsystem {
         return Math.max(-maxTurn, Math.min(turnPower, maxTurn));
     }
 
+    public double calculateMidpointAngle(double theta1, double theta2, boolean isBlue) {
+        robotAnglefromLine = follower.pose().heading()
+
+        double[] angles = visionSubsystem.getTagAngles(audienceFieldSide(), isBlue);
+
+        theta1 = angles[0];
+        theta2 = Math.toRadians(theta2);
+
+        double cot1 = 1.0 / Math.tan(theta1);
+        double cot2 = 1.0 / Math.tan(theta2);
+
+        double midpoint = Math.atan2(2.0, cot1 + cot2);
+
+        return Math.toDegrees(midpoint);
+    }
+
+    public boolean audienceFieldSide() {
+        Pose robot = follower.pose();
+        if (robot.y() < 71) {
+            audienceSide = true;
+        } else if (robot.y() >= 71) {
+            audienceSide = false;
+        }
+
+        return audienceSide;
+    }
+
     public void stop() {
         follower.stop();
         // stop() selects IDLE; stop the motors immediately without waiting for another update.
@@ -132,16 +162,14 @@ public class DriveSubsystem {
         return follower.pose();
     }
 
-    public boolean isBlueAlliance() {
-        return isBlue;
-    }
+    public boolean isBlueAlliance() { return isBlue; }
 
     public boolean isAutoAimEnabled() {
         return autoAimEnabled;
     }
 
     public Pose getSelectedGoalPose() {
-        return follower.pose().y() < 70.5 ? leftGoalPose : rightGoalPose;
+        return follower.pose().y() < 70.5 ? audienceGoalPose : oppGoalPose;
     }
 
     public double getAimTargetHeadingDegrees() {
