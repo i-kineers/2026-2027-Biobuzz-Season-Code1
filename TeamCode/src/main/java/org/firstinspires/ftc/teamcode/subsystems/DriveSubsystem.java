@@ -36,6 +36,9 @@ public class DriveSubsystem {
 
     private static boolean audienceSide;
 
+    private double cameraTargetHeading;
+
+
     public DriveSubsystem(HardwareMap hardwareMap, boolean isBlue, double startPoseX, double startPoseY, double heading) {
         visionSubsystem = new VisionSubsystem(hardwareMap);
 
@@ -58,7 +61,7 @@ public class DriveSubsystem {
             rxRamper.reset();
         }
 
-
+        cameraTargetHeading = calculateMidpointAngle(isBlue);
 
         // Use the joystick conventions from Pedro's TeleOp guide.
         double forward = yRamper.rampInput(gamepad.left_stick_y);
@@ -115,20 +118,39 @@ public class DriveSubsystem {
         return Math.max(-maxTurn, Math.min(turnPower, maxTurn));
     }
 
-    public double calculateMidpointAngle(double theta1, double theta2, boolean isBlue) {
-        robotAnglefromLine = follower.pose().heading()
+    public double calculateMidpointAngle(boolean isBlue) {
+
+        double robotHeading = Math.toDegrees(follower.pose().heading());
+        robotHeading = (robotHeading % 360 + 360) % 360;
+
+        // Shooter faces opposite the robot's forward direction
+        double shooterHeading = (robotHeading + 180) % 360;
 
         double[] angles = visionSubsystem.getTagAngles(audienceFieldSide(), isBlue);
 
-        theta1 = angles[0];
-        theta2 = Math.toRadians(theta2);
+        // Make sure both tags are detected
+        if (angles == null || angles.length < 2 || !Double.isFinite(angles[0]) || !Double.isFinite(angles[1])) {
+            return Double.NaN;
+        }
 
+        // Convert Limelight angles into reference angles
+        double theta1 = Math.toRadians(shooterHeading - angles[0]);
+        double theta2 = Math.toRadians(shooterHeading - angles[1]);
+
+        // Calculate cotangents
         double cot1 = 1.0 / Math.tan(theta1);
         double cot2 = 1.0 / Math.tan(theta2);
 
+        // Calculate geometric midpoint
         double midpoint = Math.atan2(2.0, cot1 + cot2);
 
-        return Math.toDegrees(midpoint);
+        // NEW: Correct midpoint for the opposite viewing side
+        if (Math.sin(theta1) < 0) {
+            midpoint += Math.PI;
+        }
+
+        // Return desired robot heading in degrees
+        return (Math.toDegrees(midpoint) + 180) % 360;
     }
 
     public boolean audienceFieldSide() {
