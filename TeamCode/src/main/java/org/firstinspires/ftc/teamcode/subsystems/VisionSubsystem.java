@@ -61,6 +61,18 @@ public class VisionSubsystem {
         return angles;
     }
 
+    public void addTelemetry(Telemetry telemetry, boolean isAudienceSide, boolean isBlue) {
+        telemetry.addLine("===== APRIL TAGS =====");
+        double[] angles = getTagAngles(isAudienceSide, isBlue);
+        telemetry.addData("Tag 1 TX", "%.2f", angles[0]);
+        telemetry.addData("Tag 2 TX", "%.2f", angles[1]);
+        telemetry.addData("Both Tags Detected",
+                Double.isFinite(angles[0]) && Double.isFinite(angles[1]));
+
+        telemetry.addLine("===== LIMELIGHT =====");
+        getLimelightDebuggingTelemetry(telemetry);
+    }
+
     public void getLimelightDebuggingTelemetry(Telemetry telemetry) {
         telemetry.addData("Connected", limelight.isConnected());
         telemetry.addData("Polling", limelight.isRunning());

@@ -28,22 +28,9 @@ public class MasterLogic {
 
     public void displayTelemetry(Telemetry driverStationTelemetry) {
         Telemetry telemetry = panels.getWrapper();
-        telemetry.addData("Drive", drive.isHolding() ? "Holding position" : "Field-centric");
-        telemetry.addData("Robot X (inches)", "%.1f", drive.getPose().x());
-        telemetry.addData("Robot Y (inches)", "%.1f", drive.getPose().y());
-        telemetry.addData("Heading (degrees)", "%.1f", drive.getHeadingDegrees());
-        telemetry.addData("Aim alliance", drive.isBlueAlliance() ? "BLUE" : "RED");
-        telemetry.addData("Auto aim enabled", drive.isAutoAimEnabled());
-        telemetry.addData("Aim goal X, Y", "%.2f, %.2f",
-                drive.getSelectedGoalPose().x(), drive.getSelectedGoalPose().y());
-        telemetry.addData("Aim target intake heading (deg)", drive.getAimTargetHeadingDegrees());
-        telemetry.addData("Current shooter heading (deg)", drive.getShooterHeadingDegrees());
-        telemetry.addData("Shooter state", shooter.getShooterState());
-        telemetry.addData("Shooter target (TPS)", shooter.getTargetTPS());
-        telemetry.addData("Shooter actual (TPS)", shooter.getVelocity());
-        telemetry.addData("Shooter power", "%.2f", shooter.getPower());
-        telemetry.addLine("GP1 Back/Share: reset driving reference | LT: intake | LB: outtake");
-        telemetry.addLine("GP1 RT: shoot | Start/Options: toggle shooter off/on");
+        drive.addTelemetry(telemetry);
+        intake.addTelemetry(telemetry);
+        shooter.addTelemetry(telemetry);
         panels.update(driverStationTelemetry);
     }
 

@@ -4,6 +4,7 @@ import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 /** Single-motor flywheel control. Call update(gamepad) once per TeleOp loop. */
 public class ShooterSubsystem {
@@ -221,6 +222,14 @@ public class ShooterSubsystem {
     }
 
     /** Stops immediately, bypassing the slew limit. */
+    public void addTelemetry(Telemetry telemetry) {
+        telemetry.addData("Shooter state", getShooterState());
+        telemetry.addData("Shooter target (TPS)", getTargetTPS());
+        telemetry.addData("Shooter actual (TPS)", getVelocity());
+        telemetry.addData("Shooter power", "%.2f", getPower());
+        telemetry.addLine("GP1 RT: shoot | Start/Options: toggle shooter off/on");
+    }
+
     public void stop() {
         shooterState = ShooterState.OFF;
         targetTPS = 0.0;

@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class IntakeSubsystem {
 
@@ -79,6 +80,11 @@ public class IntakeSubsystem {
                 .setEnd(endCondition -> {
                     stop();
                 });
+    }
+
+    public void addTelemetry(Telemetry telemetry) {
+        telemetry.addData("Intake state", currentIntakeState);
+        telemetry.addLine("GP1 LT: intake | LB: outtake");
     }
 
     public void stop() {
