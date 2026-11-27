@@ -65,6 +65,18 @@ public class AimingSubsystem {
 
         visionSubsystem.update();
         cameraTargetHeading = calculateMidpointAngle(robot, currentAudienceSide);
+
+        Pose goal = getSelectedGoalPose(robot);
+
+        double dx = goal.x() - robot.x();
+        double dy = goal.y() - robot.y();
+
+        if (Math.hypot(dx, dy) < 1e-6) {
+            combinedTargetHeading = Double.NaN;
+            return;
+        }
+
+        combinedTargetHeading = combineTargetHeadings(getOdometryTargetHeading(robot, goal));
     }
 
     /** Returns turn power for aiming; the caller must apply it as the drive turn input. */
@@ -78,7 +90,6 @@ public class AimingSubsystem {
             return 0.0;
         }
 
-        combinedTargetHeading = combineTargetHeadings(getOdometryTargetHeading(robot, currentGoalPose));
         double targetHeading = combinedTargetHeading;
 
         double currentHeading = robot.heading();
@@ -200,6 +211,18 @@ public class AimingSubsystem {
         Vector2D brakeCoefficients = Constants.foresightConfig.headingBrakeCoefficients.get();
         return brakeCoefficients.x() * angularVelocity
                 + brakeCoefficients.y() * angularVelocity * Math.abs(angularVelocity);
+    }
+
+    public double getCombinedTargetHeading() {
+        return combinedTargetHeading;
+    }
+
+    public double getVisionTargetHeading() {
+        return cameraTargetHeading;
+    }
+
+    public boolean isVisionAvailable() {
+        return Double.isFinite(cameraTargetHeading);
     }
 
     public void addTelemetry(Telemetry telemetry, Pose robot, double angularVelocity) {
