@@ -1,50 +1,31 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.pedropathing.controllers.Controller;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.ManualDrive;
 import com.pedropathing.math.Pose;
-import com.pedropathing.math.Vector2D;
 import com.pedropathing.utils.Angle;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 public class DriveSubsystem {
 
-    // Localization heading follows the intake (robot front). The shooter faces the rear.
-    // Intake heading 90 degrees => shooter heading 270 degrees, toward the hive at start.
-
-    private final VisionSubsystem visionSubsystem;
-    private static final double SHOOTER_OFFSET = Math.toRadians(180.0);
-    private final Controller headingController;
     private final Follower follower;
+    private final AimingSubsystem aiming;
     private double driverHeadingOffset = 0.0;
-    private boolean autoAimEnabled = false;
-    private final boolean isBlue;
 
     // Keep the existing ramp-up behavior for forward, lateral, and turn input.
     private final InputRamper yRamper = new InputRamper();
     private final InputRamper xRamper = new InputRamper();
     private final InputRamper rxRamper = new InputRamper();
 
-    // Must use the same field coordinate frame as the localization pose.
-    private static Pose oppGoalPose;
-    private static Pose audienceGoalPose;
-
-    private static boolean audienceSide;
-
     public DriveSubsystem(HardwareMap hardwareMap, boolean isBlue, double startPoseX, double startPoseY, double heading) {
-        visionSubsystem = new VisionSubsystem(hardwareMap);
-
-        this.isBlue = isBlue;
-        oppGoalPose = new Pose(58.14, 60.56);
-        audienceGoalPose = new Pose(58.02, 81.77);
-
+        VisionSubsystem vision = new VisionSubsystem(hardwareMap);
         follower = Constants.create(hardwareMap);
-        headingController = Constants.foresightConfig.headingFeedback.get();
+        aiming = new AimingSubsystem(vision, Constants.foresightConfig.headingFeedback.get(), isBlue);
         follower.setPose(new Pose(startPoseX, startPoseY, Math.toRadians(heading)));
     }
 
@@ -53,134 +34,44 @@ public class DriveSubsystem {
             resetHeading();
         }
         if (gamepad.rightBumperWasPressed()) {
-            autoAimEnabled = !autoAimEnabled;
-            headingController.reset();
+            aiming.toggle();
             rxRamper.reset();
         }
 
-
+        Pose robot = follower.pose();
+        aiming.update(robot);
 
         // Use the joystick conventions from Pedro's TeleOp guide.
         double forward = yRamper.rampInput(gamepad.left_stick_y);
         double lateral = xRamper.rampInput(gamepad.left_stick_x);
-        double turn = autoAimEnabled ? odometryAutoAim() : rxRamper.rampInput(-gamepad.right_stick_x);
+        double turn = aiming.isEnabled()
+                ? aiming.calculateTurnPower(robot, follower.velocity().omega)
+                : rxRamper.rampInput(-gamepad.right_stick_x);
 
-        DrivePowers powers = ManualDrive.fieldCentric(-forward, -lateral, turn, follower.pose().heading() - driverHeadingOffset);
+        DrivePowers powers = ManualDrive.fieldCentric(-forward, -lateral, turn, robot.heading() - driverHeadingOffset);
 
         // Apply translation and the selected turn input without entering position hold.
         follower.manual(powers);
         follower.update();
-        visionSubsystem.update();
-    }
-
-    /** Returns turn power for aiming; the caller must apply it as the drive turn input. */
-    public double odometryAutoAim() {
-        Pose robot = follower.pose();
-
-        Pose currentGoalPose = getSelectedGoalPose();
-
-        double dx = currentGoalPose.x() - robot.x();
-        double dy = currentGoalPose.y() - robot.y();
-        if (Math.hypot(dx, dy) < 1e-6) {
-            headingController.reset();
-            return 0.0;
-        }
-
-        double angleToGoal = Math.atan2(dy, dx);
-        double targetHeading = Angle.normalize(angleToGoal + SHOOTER_OFFSET);
-
-        double currentHeading = robot.heading();
-        double error = Angle.normalizeSigned(targetHeading - currentHeading);
-
-        // Match Foresight's signed heading braking displacement (omega is radians/sec).
-        Vector2D brakeCoefficients = Constants.foresightConfig.headingBrakeCoefficients.get();
-        double angularVelocity = follower.velocity().omega;
-        double brakingDisplacement = brakeCoefficients.x() * angularVelocity + brakeCoefficients.y() * angularVelocity * Math.abs(angularVelocity);
-        double predictedHeading = currentHeading + brakingDisplacement;
-        double brakingError = Angle.normalizeSigned(targetHeading - predictedHeading);
-
-        // Stop correcting only when both the current and predicted stopping headings are close.
-        // Keep braking when momentum would carry the shooter past the goal.
-        if (Math.abs(error) < Math.toRadians(1.5)
-                && Math.abs(brakingError) < Math.toRadians(1.5)) {
-            headingController.reset();
-            return 0.0;
-        }
-
-        // Pedro 3 takes the target and the signed error as separate arguments.
-        double turnPower = headingController.calculate(targetHeading, brakingError);
-
-        // Ramp down near target for precision
-        double maxTurn = Math.abs(error) < Math.toRadians(10) ? 0.2 : 0.4;
-        return Math.max(-maxTurn, Math.min(turnPower, maxTurn));
-    }
-
-    public double calculateMidpointAngle(double theta1, double theta2, boolean isBlue) {
-        robotAnglefromLine = follower.pose().heading()
-
-        double[] angles = visionSubsystem.getTagAngles(audienceFieldSide(), isBlue);
-
-        theta1 = angles[0];
-        theta2 = Math.toRadians(theta2);
-
-        double cot1 = 1.0 / Math.tan(theta1);
-        double cot2 = 1.0 / Math.tan(theta2);
-
-        double midpoint = Math.atan2(2.0, cot1 + cot2);
-
-        return Math.toDegrees(midpoint);
-    }
-
-    public boolean audienceFieldSide() {
-        Pose robot = follower.pose();
-        if (robot.y() < 71) {
-            audienceSide = true;
-        } else if (robot.y() >= 71) {
-            audienceSide = false;
-        }
-
-        return audienceSide;
     }
 
     public void stop() {
         follower.stop();
-        // stop() selects IDLE; stop the motors immediately without waiting for another update.
         follower.drivetrain.stop();
         yRamper.reset();
         xRamper.reset();
         rxRamper.reset();
-        headingController.reset();
-        autoAimEnabled = false;
+        aiming.stop();
     }
 
-    /** Resets the driver's field-centric reference without changing the localization pose. */
+    /** Restores the configured reset pose and clears the aiming correction. */
     public void resetHeading() {
-        follower.setPose(new Pose(6.59, 133.88, Math.toRadians(270)));;
+        follower.setPose(new Pose(6.59, 133.88, Math.toRadians(270)));
+        aiming.resetTracking();
     }
 
     public Pose getPose() {
         return follower.pose();
-    }
-
-    public boolean isBlueAlliance() { return isBlue; }
-
-    public boolean isAutoAimEnabled() {
-        return autoAimEnabled;
-    }
-
-    public Pose getSelectedGoalPose() {
-        return follower.pose().y() < 70.5 ? audienceGoalPose : oppGoalPose;
-    }
-
-    public double getAimTargetHeadingDegrees() {
-        Pose robot = follower.pose();
-        Pose goal = getSelectedGoalPose();
-        double bearing = Math.atan2(goal.y() - robot.y(), goal.x() - robot.x());
-        return Math.toDegrees(Angle.normalize(bearing + SHOOTER_OFFSET));
-    }
-
-    public double getShooterHeadingDegrees() {
-        return Math.toDegrees(Angle.normalize(follower.pose().heading() + SHOOTER_OFFSET));
     }
 
     public double getHeadingDegrees() {
@@ -191,7 +82,18 @@ public class DriveSubsystem {
         return follower.holding();
     }
 
+    public void addTelemetry(Telemetry telemetry) {
+        Pose robot = follower.pose();
+        telemetry.addData("Drive", isHolding() ? "Holding position" : "Field-centric");
+        telemetry.addLine("GP1 Back/Share: reset driving reference");
 
+        telemetry.addLine("===== LOCALIZATION =====");
+        telemetry.addData("Robot X (inches)", "%.1f", robot.x());
+        telemetry.addData("Robot Y (inches)", "%.1f", robot.y());
+        telemetry.addData("Heading (degrees)", "%.1f", getHeadingDegrees());
+
+        aiming.addTelemetry(telemetry, robot, follower.velocity().omega);
+    }
 
     private static class InputRamper {
 
